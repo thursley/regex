@@ -81,4 +81,12 @@ end
     re = parse("a(abc)+d")
     @test (true, 5) == test(re, "aabcd")
     @test (true, 8) == test(re, "aabcabcd")
+    @test (false, 2) == test(re, "abcabcd")
+
+    re2 = parse("a(bc(de)?)e")
+    @test (true, 6) == test(re2, "abcdee")
+    re2 = parse("a(bc(de)?)e")
+    @test (true, 4) == test(re2, "abce")
+    re2 = parse("a(bc(de)?)e")
+    @test (false, 6) == test(re2, "abcde")
 end
