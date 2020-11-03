@@ -111,8 +111,9 @@ function matchesstring(state::RegexElement, string::AbstractString, index::Integ
         end
 
     elseif state.type == Group
-        return test(state.value, SubString(string, index))
-
+        match, consumed = test(state.value, SubString(string, index))
+        return (match, match ? consumed : 0)
+        
     else
         throw(ErrorException("unkown type"))
     end
