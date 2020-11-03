@@ -96,7 +96,7 @@ function shift!(a::Array)
     return popfirst!(a)
 end
 
-function matchesstring(state::RegexElement, string::String, index::Integer)
+function matchesstring(state::RegexElement, string::AbstractString, index::Integer)
     if index > length(string)
         return (false, 0)
 
@@ -137,7 +137,7 @@ function test(re::Array, string::AbstractString)
             index += consumed
             currentstate = shift!(states)
 
-        elseif ZeroOrMore == currentstate
+        elseif ZeroOrMore == currentstate.quantifier
             while true
                 ismatch, consumed = matchesstring(currentstate, string, index)
                 if !ismatch || consumed == 0
@@ -148,7 +148,7 @@ function test(re::Array, string::AbstractString)
             currentstate = shift!(states)
         
         else
-            throw(ErrorException("unkown quantifier"))
+            throw(ErrorException("unkown quantifier {currentstate.quantifier}"))
         end
     end
 
