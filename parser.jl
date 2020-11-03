@@ -89,10 +89,6 @@ function parse(re::String)
     return stack[1]
 end
 
-re = "a?(b.*\\.c)+d"
-parsed = parse(re)
-println(parsed)
-
 function shift!(a::Array)
     if isempty(a)
         return nothing
@@ -122,12 +118,13 @@ function matchesstring(state::RegexElement, string::String, index::Integer)
     end
 end
 
-function test(states::Array, string::AbstractString)
+function test(re::Array, string::AbstractString)
+    states = copy(re)
     currentstate = shift!(states)
     index = 1
 
     while currentstate !== nothing
-        if currentstate.quantifier == ExactlyOne
+        if ExactlyOne == currentstate.quantifier
             ismatch, consumed = matchesstring(currentstate, string, index)
             if !ismatch
                 return (false, index)
@@ -157,3 +154,6 @@ function test(states::Array, string::AbstractString)
 
     return (true, index - 1)
 end
+
+re = parse("a?bc")
+test(re, "abc")
