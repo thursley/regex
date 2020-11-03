@@ -68,4 +68,17 @@ end
     re3 = parse("a?bc")
     @test test(re3, "bc") == (true, 2)
     @test test(re3, "abc") == (true, 3)
+
+    re4 = parse("a*b")
+    @test (true, 2) == test(re4, "ab")
+    @test (true, 3) == test(re4, "aab")
+    @test (true, 9) == test(re4, "aaaaaaaab")
+    @test (false, 9) == test(re4, "aaaaaaaa")
+    @test (false, 9) == test(re4, "aaaaaaaac")
+end
+
+@testset "test_groups" begin
+    re = parse("a(abc)+d")
+    @test (true, 5) == test(re, "aabcd")
+    @test (true, 8) == test(re, "aabcabcd")
 end
