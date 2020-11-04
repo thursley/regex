@@ -13,6 +13,12 @@ mutable struct RegexElement
     value::Any
 end
 
+mutable struct BackTrackInformation
+    isbacktrackable::Bool
+    state::RegexElement
+    consumed::Array{Integer}
+end
+
 copy(el::RegexElement) = RegexElement(el.quantifier, el.type, el.value)
 
 function parse(re::String)
