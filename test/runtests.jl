@@ -19,6 +19,19 @@ end
     @test nothing === shift!(a)
 end
 
+@testset "test_unshift" begin
+    a = [1]
+    @test 2 == unshift!(a, 2)
+    @test 2 == a[1]
+    @test 3 == unshift!(a, 18)
+    @test begin
+        18 == a[1] &&
+        2 == a[2] &&
+        1 == a[3] &&
+        3 == length(a)
+    end
+end
+
 @testset "test_matchesstring" begin
     re1 = RegexElement(ExactlyOne, Value, 'a')
 
@@ -71,10 +84,31 @@ end
 
     re4 = parse("a*b")
     @test (true, 2) == test(re4, "ab")
+    re4 = parse("a*b")
     @test (true, 3) == test(re4, "aab")
+    re4 = parse("a*b")
     @test (true, 9) == test(re4, "aaaaaaaab")
-    @test (false, 9) == test(re4, "aaaaaaaa")
-    @test (false, 9) == test(re4, "aaaaaaaac")
+    re4 = parse("a*b")
+    @test false == test(re4, "aaaaaaaa")[1]
+    re4 = parse("a*b")
+    @test false == test(re4, "aaaaaaaac")[1]
+    
+    re5 = parse("a*a")
+    @test (true, 1) == test(re5, "a") 
+    @test (true, 2) == test(re5, "aa")
+    
+    re6 = parse("a(bc)*bc")
+    @test (true, 3) == test(re6, "abc")
+    @test (true, 5) == test(re6, "abcbc")
+    
+    re7 = parse("a(bc)?bc")
+    @test (true, 3) == test(re7, "abc")
+    @test (true, 5) == test(re7, "abcbc")
+    
+    re8 = parse("a(bc)*b?c?")
+    @test (true, 1) == test(re8, "a")
+    @test (true, 2) == test(re8, "ab")
+    @test (true, 2) == test(re8, "ac")
 end
 
 @testset "test_groups" begin
