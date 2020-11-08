@@ -149,6 +149,14 @@ function matchesstring(state::RegexElement, string::AbstractString, index::Integ
     elseif state.type == Group
         match, consumed = test(state.value, SubString(string, index))
         return (match, match ? consumed : 0)
+
+    elseif Alternative === state.type
+        for value in state.value
+            if value === string[index]
+                return (true, 1)
+            end
+        end
+        return (false, 0)
         
     else
         throw(ErrorException("unkown type"))
