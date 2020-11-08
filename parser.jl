@@ -36,7 +36,8 @@ function parse(re::String)
         elseif  next == '?'
             lastelem = last(last(stack))
             if lastelem === nothing
-                throw(ErrorException("quantifier may not be first element in group"))
+                throw(ErrorException(
+                    "quantifier may not be first element in group"))
             end
 
             lastelem.quantifier = ZeroOrOne
@@ -45,7 +46,8 @@ function parse(re::String)
         elseif next == '*'
             lastelem = last(last(stack))
             if lastelem === nothing
-                throw(ErrorException("quantifier may not be first element in group"))
+                throw(ErrorException(
+                    "quantifier may not be first element in group"))
             end
 
             lastelem.quantifier = ZeroOrMore
@@ -54,7 +56,8 @@ function parse(re::String)
         elseif next == '+'
             lastelem = last(last(stack))
             if lastelem === nothing
-                throw(ErrorException("quantifier may not be first element in group"))
+                throw(ErrorException(
+                    "quantifier may not be first element in group"))
             end
 
             push!(last(stack), copy(lastelem))
@@ -80,7 +83,8 @@ function parse(re::String)
             end
             alternativeactive = false
             alternatives = pop!(stack)
-            push!(last(stack), RegexElement(ExactlyOne, Alternative, alternatives))
+            push!(last(stack), 
+                  RegexElement(ExactlyOne, Alternative, alternatives))
             i += 1
             
         elseif alternativeactive
@@ -134,7 +138,9 @@ function unshift!(a::Array, value::Any)
     return length(a)
 end
 
-function matchesstring(state::RegexElement, string::AbstractString, index::Integer)
+function matchesstring(
+    state::RegexElement, string::AbstractString, index::Integer)
+
     if index > length(string)
         return (false, 0)
 
@@ -219,7 +225,8 @@ function test(re::Array, string::AbstractString)
             end
 
             index += consumed
-            push!(backtrackstack, BackTrackState(false, currentstate, [ consumed ]))
+            push!(backtrackstack,
+                  BackTrackState(false, currentstate, [ consumed ]))
             currentstate = shift!(states)
 
         elseif ZeroOrOne == currentstate.quantifier
@@ -227,7 +234,8 @@ function test(re::Array, string::AbstractString)
             index += consumed
             
             # only backtrackable, when consumed something.
-            push!(backtrackstack, BackTrackState(ismatch, currentstate, [ consumed ]))
+            push!(backtrackstack, 
+                  BackTrackState(ismatch, currentstate, [ consumed ]))
 
             currentstate = shift!(states)
 
