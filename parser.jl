@@ -269,6 +269,3 @@ function test(re::Array, string::AbstractString)
 
     return (true, index - 1)
 end
-
-re = parse("a?bc")
-test(re, "abc")
