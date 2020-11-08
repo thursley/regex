@@ -34,10 +34,11 @@ function parse(re::String)
                 if length(re) === i
                     throw(ErrorException("nothing to escape left"))
                 end
-                next = i + 1
+                i += 1
+                next = re[i]
             end
             push!(last(stack), next)
-            i += 2
+            i += 1
 
         elseif next == '.'
             push!(last(stack), RegexElement(ExactlyOne, Wildcard, '.'))
@@ -95,7 +96,7 @@ function parse(re::String)
             end
             alternativeActive = false
             alternatives = pop!(stack)
-            push!(last(stack), ExactlyOne, Alternative, alternatives)
+            push!(last(stack), RegexElement(ExactlyOne, Alternative, alternatives))
             i += 1
 
         elseif next == '\\'

@@ -124,3 +124,11 @@ end
     re2 = parse("a(bc(de)?)e")
     @test (false, 6) == test(re2, "abcde")
 end
+
+@testset "test_alternatives" begin
+    re = parse("[abc]")
+    @test (true, 1) == test(re, "a")
+    @test (true, 1) == test(re, "b")
+    @test (true, 1) == test(re, "c")
+    @test (false, 1) == test(re, "d")
+end
