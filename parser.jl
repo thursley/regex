@@ -4,7 +4,7 @@ import Base.copy
 last(l::Array) = (length(l) == 0) ? nothing : l[length(l)]
 
 @enum Quantifier ExactlyOne ZeroOrOne ZeroOrMore
-@enum RegexType Wildcard Value Group
+@enum RegexType Wildcard Value Group Alternative
 
 mutable struct RegexElement
     quantifier::Quantifier
@@ -22,12 +22,24 @@ copy(el::RegexElement) = RegexElement(el.quantifier, el.type, el.value)
 
 function parse(re::String)
     stack = []
+    alternativeActive = false
     push!(stack, [])
 
     i = 1;
     while i <= length(re)
         next = re[i]
-        if next == '.'
+
+        if alternativeActive && next != ']'
+            if '\\' === next
+                if length(re) === i
+                    throw(ErrorException("nothing to escape left"))
+                end
+                next = i + 1
+            end
+            push!(last(stack), next)
+            i += 2
+
+        elseif next == '.'
             push!(last(stack), RegexElement(ExactlyOne, Wildcard, '.'))
             i += 1
 
@@ -70,6 +82,20 @@ function parse(re::String)
 
             group = pop!(stack)
             push!(last(stack), RegexElement(ExactlyOne, Group, group))
+            i += 1
+
+        elseif next == '['
+            alternativeActive = true
+            push!(stack, [])
+            i += 1
+
+        elseif next == ']'
+            if length(stack) == 1
+                throw(ErrorException("no alternatives to close"))
+            end
+            alternativeActive = false
+            alternatives = pop!(stack)
+            push!(last(stack), ExactlyOne, Alternative, alternatives)
             i += 1
 
         elseif next == '\\'
