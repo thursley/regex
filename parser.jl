@@ -22,25 +22,14 @@ copy(el::RegexElement) = RegexElement(el.quantifier, el.type, el.value)
 
 function parse(re::String)
     stack = []
-    alternativeActive = false
+    alternativeactive = false
     push!(stack, [])
 
     i = 1;
     while i <= length(re)
         next = re[i]
 
-        if alternativeActive && next != ']'
-            if '\\' === next
-                if length(re) === i
-                    throw(ErrorException("nothing to escape left"))
-                end
-                i += 1
-                next = re[i]
-            end
-            push!(last(stack), next)
-            i += 1
-
-        elseif next == '.'
+        if next == '.'
             push!(last(stack), RegexElement(ExactlyOne, Wildcard, '.'))
             i += 1
 
@@ -85,18 +74,30 @@ function parse(re::String)
             push!(last(stack), RegexElement(ExactlyOne, Group, group))
             i += 1
 
-        elseif next == '['
-            alternativeActive = true
-            push!(stack, [])
-            i += 1
-
         elseif next == ']'
-            if length(stack) == 1
+            if length(stack) == 1 || !alternativeactive
                 throw(ErrorException("no alternatives to close"))
             end
-            alternativeActive = false
+            alternativeactive = false
             alternatives = pop!(stack)
             push!(last(stack), RegexElement(ExactlyOne, Alternative, alternatives))
+            i += 1
+            
+        elseif alternativeactive
+            if '\\' === next
+                if length(re) === i
+                    throw(ErrorException("nothing to escape left"))
+                end
+                i += 1
+                next = re[i]
+            end
+            push!(last(stack), next)
+            i += 1
+            
+        elseif next == '['
+            # cave: order does matter
+            alternativeactive = true
+            push!(stack, [])
             i += 1
 
         elseif next == '\\'
