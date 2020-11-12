@@ -1,8 +1,6 @@
 
 import Base.copy
 
-last(l::Array) = (length(l) == 0) ? nothing : l[length(l)]
-
 @enum Quantifier begin
     ExactlyOne 
     ZeroOrOne 
