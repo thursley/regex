@@ -132,3 +132,11 @@ end
     @test (true, 1) == test(re, "c")
     @test (false, 1) == test(re, "d")
 end
+
+@testset "test_noneofalternatives" begin
+    re = parse("[^abc]")
+    @test (false, 1) == test(re, "a")
+    @test (false, 1) == test(re, "b")
+    @test (false, 1) == test(re, "c")
+    @test (true, 1) == test(re, "d")
+end
