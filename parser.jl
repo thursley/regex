@@ -3,8 +3,19 @@ import Base.copy
 
 last(l::Array) = (length(l) == 0) ? nothing : l[length(l)]
 
-@enum Quantifier ExactlyOne ZeroOrOne ZeroOrMore
-@enum RegexType Wildcard Value Group Alternative
+@enum Quantifier begin
+    ExactlyOne 
+    ZeroOrOne 
+    ZeroOrMore
+end
+
+@enum RegexType begin
+    Wildcard 
+    Value 
+    Group 
+    Alternative
+    NoneOfAlternative
+end
 
 mutable struct RegexElement
     quantifier::Quantifier
@@ -83,8 +94,9 @@ function parse(re::String)
             end
             alternativeactive = false
             alternatives = pop!(stack)
+            type = '^' === last(alternatives) ? NoneOfAlternative : Alternative
             push!(last(stack), 
-                  RegexElement(ExactlyOne, Alternative, alternatives))
+                  RegexElement(ExactlyOne, type, alternatives))
             i += 1
             
         elseif alternativeactive
@@ -158,13 +170,15 @@ function matchesstring(
         match, consumed = test(state.value, SubString(string, index))
         return (match, match ? consumed : 0)
 
-    elseif Alternative === state.type
+    elseif state.type in (Alternative, NoneOfAlternative)
+        resultmatch = Alternative === state.type
+        matchcount = Alternative === state.type ? 1 : 0 
         for value in state.value
             if value === string[index]
-                return (true, 1)
+                return (resultmatch, matchcount)
             end
         end
-        return (false, 0)
+        return (!resultmatch, 1 - matchcount)
         
     else
         throw(ErrorException("unkown type"))
