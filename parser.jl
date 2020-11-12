@@ -94,7 +94,7 @@ function parse(re::String)
             end
             alternativeactive = false
             alternatives = pop!(stack)
-            type = '^' === last(alternatives) ? NoneOfAlternative : Alternative
+            type = '^' === alternatives[1] ? NoneOfAlternative : Alternative
             push!(last(stack), 
                   RegexElement(ExactlyOne, type, alternatives))
             i += 1
