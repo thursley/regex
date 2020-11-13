@@ -11,8 +11,8 @@ end
     Wildcard 
     Value 
     Group 
-    Alternative
-    NoneOfAlternative
+    Selection
+    InvertedSelection
 end
 
 mutable struct RegexElement
@@ -29,47 +29,65 @@ end
 
 copy(el::RegexElement) = RegexElement(el.quantifier, el.type, el.value)
 
+function isInvertSelectionIndicated(char::Char, element::RegexElement)::Bool
+    return '^' === char && 
+        0 === length(element.value) && 
+        Selection === element.type
+end
+
+function getLastElement(stack::Array{Array{RegexElement}})::RegexElement
+    return last(last(stack))
+end
+
+
 function parse(re::String)
     stack = []
-    alternativeactive = false
+    selectionActive = false
     push!(stack, [])
 
     i = 1;
     while i <= length(re)
         next = re[i]
+        lastElement = getLastElement(stack)
 
-        if next == '.'
+        # ']' is allowed as first element of selection/inverted selection
+        if selectionActive && (']' !== next || length(lastElement.value) > 0)
+            if isInvertSelectionIndicated(next, lastElement)
+                lastElement.type = InvertedSelection
+            else
+                push!(lastElement.value, next)
+            end
+            i += 1
+
+        elseif next == '.'
             push!(last(stack), RegexElement(ExactlyOne, Wildcard, '.'))
             i += 1
 
         elseif  next == '?'
-            lastelem = last(last(stack))
-            if lastelem === nothing
+            if lastElement === nothing
                 throw(ErrorException(
                     "quantifier may not be first element in group"))
             end
 
-            lastelem.quantifier = ZeroOrOne
+            lastElement.quantifier = ZeroOrOne
             i += 1
 
         elseif next == '*'
-            lastelem = last(last(stack))
-            if lastelem === nothing
+            if lastElement === nothing
                 throw(ErrorException(
                     "quantifier may not be first element in group"))
             end
 
-            lastelem.quantifier = ZeroOrMore
+            lastElement.quantifier = ZeroOrMore
             i += 1
 
         elseif next == '+'
-            lastelem = last(last(stack))
-            if lastelem === nothing
+            if lastElement === nothing
                 throw(ErrorException(
                     "quantifier may not be first element in group"))
             end
 
-            push!(last(stack), copy(lastelem))
+            push!(last(stack), copy(lastElement))
             last(last(stack)).quantifier = ZeroOrMore
             i += 1
 
@@ -87,31 +105,16 @@ function parse(re::String)
             i += 1
 
         elseif next == ']'
-            if length(stack) == 1 || !alternativeactive
+            if !selectionActive
                 throw(ErrorException("no alternatives to close"))
             end
-            alternativeactive = false
-            alternatives = pop!(stack)
-            type = '^' === alternatives[1] ? NoneOfAlternative : Alternative
-            push!(last(stack), 
-                  RegexElement(ExactlyOne, type, alternatives))
-            i += 1
-            
-        elseif alternativeactive
-            if '\\' === next
-                if length(re) === i
-                    throw(ErrorException("nothing to escape left"))
-                end
-                i += 1
-                next = re[i]
-            end
-            push!(last(stack), next)
+            selectionActive = false
             i += 1
             
         elseif next == '['
             # cave: order does matter
-            alternativeactive = true
-            push!(stack, [])
+            selectionActive = true
+            push!(stack, RegexElement(ExactlyOne, Selection, []))
             i += 1
 
         elseif next == '\\'
@@ -168,9 +171,9 @@ function matchesstring(
         match, consumed = test(state.value, SubString(string, index))
         return (match, match ? consumed : 0)
 
-    elseif state.type in (Alternative, NoneOfAlternative)
-        resultmatch = Alternative === state.type
-        matchcount = Alternative === state.type ? 1 : 0 
+    elseif state.type in (Selection, InvertedSelection)
+        resultmatch = Selection === state.type
+        matchcount = Selection === state.type ? 1 : 0 
         for value in state.value
             if value === string[index]
                 return (resultmatch, matchcount)
@@ -237,8 +240,8 @@ function test(re::Array, string::AbstractString)
             end
 
             index += consumed
-            push!(backtrackstack,
-                  BackTrackState(false, currentstate, [ consumed ]))
+            backtracked = BackTrackState(false, currentstate, [ consumed ])
+            push!(backtrackstack, backtracked)
             currentstate = shift!(states)
 
         elseif ZeroOrOne == currentstate.quantifier
