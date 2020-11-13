@@ -118,7 +118,7 @@ function parse(re::String)
             i += 1
 
         elseif next == '\\'
-            if i == length(re)
+            if length(re) === i
                 # escaped char must follow
                 throw(ErrorException("no character to escape"))
             end
