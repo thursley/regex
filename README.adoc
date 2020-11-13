@@ -1,3 +1,5 @@
 == regex ==
 
-simple regex parser in julia, inspired by https://github.com/LowLevelJavaScript/Regular-Expression-Engine[Francis Stokes]
+simple regex parser in julia, inspired by 
+https://github.com/LowLevelJavaScript/Regular-Expression-Engine[Francis Stokes],
+ additionally adding selection/inverted selections 
