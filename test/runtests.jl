@@ -126,17 +126,22 @@ end
 end
 
 @testset "test_alternatives" begin
-    re = parse("[abc]")
+    re = parse("[]abc]")
     @test (true, 1) == test(re, "a")
     @test (true, 1) == test(re, "b")
     @test (true, 1) == test(re, "c")
+    @test (true, 1) == test(re, "]")
+
     @test (false, 1) == test(re, "d")
 end
 
 @testset "test_noneofalternatives" begin
-    re = parse("[^abc]")
+    re = parse("[^]abc]")
     @test (false, 1) == test(re, "a")
     @test (false, 1) == test(re, "b")
     @test (false, 1) == test(re, "c")
+    @test (false, 1) == test(re, "]")
+    
     @test (true, 1) == test(re, "d")
+
 end
