@@ -35,15 +35,19 @@ function isInvertSelectionIndicated(char::Char, element::RegexElement)::Bool
         Selection === element.type
 end
 
-function getLastElement(stack::Array{Array{RegexElement}})::RegexElement
+function getLastElement(stack::Array)::Union{Nothing, RegexElement}
+    if 0 === length(stack) || 0 === length(last(stack))
+        return nothing
+    end
+
     return last(last(stack))
 end
 
 
 function parse(re::String)
     stack = []
-    selectionActive = false
     push!(stack, [])
+    selectionActive = false
 
     i = 1;
     while i <= length(re)
@@ -51,7 +55,7 @@ function parse(re::String)
         lastElement = getLastElement(stack)
 
         # ']' is allowed as first element of selection/inverted selection
-        if selectionActive && (']' !== next || length(lastElement.value) > 0)
+        if selectionActive && (']' !== next || 0 === length(lastElement.value))
             if isInvertSelectionIndicated(next, lastElement)
                 lastElement.type = InvertedSelection
             else
@@ -114,7 +118,7 @@ function parse(re::String)
         elseif next == '['
             # cave: order does matter
             selectionActive = true
-            push!(stack, RegexElement(ExactlyOne, Selection, []))
+            push!(last(stack), RegexElement(ExactlyOne, Selection, []))
             i += 1
 
         elseif next == '\\'
