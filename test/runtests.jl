@@ -145,3 +145,10 @@ end
     @test (true, 1) == test(re, "d")
 
 end
+
+@testset "test_complex" begin
+    re = parse("[abcdefghijklmnopqrstuvwxyz0123456789.]+@[abcdefghijklmnopqrstuvwxyz0123456789.]+\\.[abcdefghijklmnopqrstuvwxyz0123456789]+")
+    @test true === test(re, "henry.preusser@posteo.de")[1]
+    @test false === test(re, "henry_preusser@posteo.de")[1]
+
+end
