@@ -11,8 +11,8 @@ end
     Wildcard 
     Value 
     Group 
-    Selection
-    InvertedSelection
+    CharacterClass
+    NegatedCharacterClass
 end
 
 mutable struct RegexElement
@@ -29,10 +29,10 @@ end
 
 copy(el::RegexElement) = RegexElement(el.quantifier, el.type, el.value)
 
-function isInvertSelectionIndicated(char::Char, element::RegexElement)::Bool
+function isNegateCharacterClassIndicated(char::Char, element::RegexElement)::Bool
     return '^' === char && 
         0 === length(element.value) && 
-        Selection === element.type
+        CharacterClass === element.type
 end
 
 function getLastElement(stack::Array)::Union{Nothing, RegexElement}
@@ -47,17 +47,17 @@ end
 function parse(re::String)
     stack = []
     push!(stack, [])
-    selectionActive = false
+    inCharacterClass = false
 
     i = 1;
     while i <= length(re)
         next = re[i]
         lastElement = getLastElement(stack)
 
-        # ']' is allowed as first element of selection/inverted selection
-        if selectionActive && (']' !== next || 0 === length(lastElement.value))
-            if isInvertSelectionIndicated(next, lastElement)
-                lastElement.type = InvertedSelection
+        # ']' is allowed as first element of (negated) character class
+        if inCharacterClass && (']' !== next || 0 === length(lastElement.value))
+            if isNegateCharacterClassIndicated(next, lastElement)
+                lastElement.type = NegatedCharacterClass
             else
                 push!(lastElement.value, next)
             end
@@ -109,16 +109,16 @@ function parse(re::String)
             i += 1
 
         elseif next == ']'
-            if !selectionActive
+            if !inCharacterClass
                 throw(ErrorException("no alternatives to close"))
             end
-            selectionActive = false
+            inCharacterClass = false
             i += 1
             
         elseif next == '['
             # cave: order does matter
-            selectionActive = true
-            push!(last(stack), RegexElement(ExactlyOne, Selection, []))
+            inCharacterClass = true
+            push!(last(stack), RegexElement(ExactlyOne, CharacterClass, []))
             i += 1
 
         elseif next == '\\'
@@ -175,9 +175,9 @@ function matchesstring(
         match, consumed = test(state.value, SubString(string, index))
         return (match, match ? consumed : 0)
 
-    elseif state.type in (Selection, InvertedSelection)
-        resultmatch = Selection === state.type
-        matchcount = Selection === state.type ? 1 : 0 
+    elseif state.type in (CharacterClass, NegatedCharacterClass)
+        resultmatch = CharacterClass === state.type
+        matchcount = CharacterClass === state.type ? 1 : 0 
         for value in state.value
             if value === string[index]
                 return (resultmatch, matchcount)
